@@ -60,11 +60,16 @@ class CSVUtils private constructor() {
         (0..10000).mapTo(list) { History(name = "User$it", number = "Number $it", created = Date().time) }
 
 
-       return Observable.just(1)
-                .map { if (file.exists() && !file.isDirectory) CsvBeanWriter(FileWriter(file, true), csvPref) else CsvBeanWriter(FileWriter(file), csvPref) }
-                .doOnNext { if (!(file.exists() && !file.isDirectory)) it.writeHeader(*headers) }
+        val exists = file.exists()
+        val directory = file.isDirectory
+
+        val b = !exists && !directory
+        return Observable.just(1)
+                .map { if (exists && !directory) CsvBeanWriter(FileWriter(file, true), csvPref) else CsvBeanWriter(FileWriter(file), csvPref) }
                 .map {
                     it.use {
+                        if (b)
+                            it.writeHeader(*headers)
                         val writer = it
                         list.forEach { writer.write(it, headers, cellProcessor) }
                     }
